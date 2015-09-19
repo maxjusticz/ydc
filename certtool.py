@@ -29,6 +29,11 @@ if __name__ == "__main__":
     #    with open("".join(["/tmp/","tmpcert",str(i),".cer"]), "w") as fout:
     #        fout.write(cert)
  
+    parsed = parse_certs(certs)
+    if len(parsed) == 0:
+        print "Couldn't find your certs. Please open firefox and set up your MIT certificates"
+        exit(0)
+
     with open("/tmp/tmp_client_cert.cer", "w") as fout:
         fout.write(parse_certs(certs)[0])
 
