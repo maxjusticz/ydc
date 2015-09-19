@@ -1,0 +1,37 @@
+{
+  "name": "rtc",
+  "main": "dist/rtc.min.js",
+  "version": "3.3.0",
+  "authors": [
+    "Damon Oehlman <damon.oehlman@nicta.com.au>"
+  ],
+  "description": "Build WebRTC conferencing applications with easy using rtc.io. This package provides a super-friendly entry point for working with WebRTC, dive into underling rtc.io modules for more configuration and customization opportunities",
+  "moduleType": [
+    "amd",
+    "globals",
+    "node"
+  ],
+  "keywords": [
+    "webrtc",
+    "rtc.io"
+  ],
+  "license": "Apache 2.0",
+  "homepage": "http://rtc.io/",
+  "ignore": [
+    "node_modules",
+    "bower_components",
+    "examples",
+    "test",
+    "tests"
+  ],
+  "_release": "3.3.0",
+  "_resolution": {
+    "type": "version",
+    "tag": "v3.3.0",
+    "commit": "0ae7227ad4f6c2b97646ce887ef183ae854b5e8d"
+  },
+  "_source": "git://github.com/rtc-io/rtc.git",
+  "_target": "~3.3.0",
+  "_originalSource": "rtc-io/rtc",
+  "_direct": true
+}
