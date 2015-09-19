@@ -37,7 +37,9 @@ if __name__ == "__main__":
     with open("/tmp/tmp_client_cert.cer", "w") as fout:
         fout.write(parse_certs(certs)[0])
 
-    pexpect.spawn("openssl genrsa -out /tmp/hackmitkey.key 768")
+    c = pexpect.spawn("openssl genrsa -out /tmp/hackmitkey.key 768")
+
+    print c.read()
 
     print open("/tmp/hackmitkey.key").read()
 
