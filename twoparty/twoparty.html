@@ -1,0 +1,65 @@
+<script src="js-nacl/lib/nacl_factory.js"></script>
+
+<script>
+    SECURITY_PARAMETER = 256;
+
+    var nacl = nacl_factory.instantiate();
+
+    function SecretRepresentation() {
+        this["0"] = nacl.random_bytes(SECURITY_PARAMETER/8);
+        this["1"] = nacl.random_bytes(SECURITY_PARAMETER/8);
+    }
+
+    function xor3(a, b, c) {
+        output = []
+        for (var i = 0; i < a.length; i++) {
+            output.push(a[i] ^ b[i] ^ c[i]);
+        }
+        return output
+    }
+
+    function And() {
+        //Represents a single And gate, returning the truth table in a random order.
+        //We hold onto the representations of 0 and 1 for each wire, so it's ok to
+        //always return the truth table shuffled.
+        //
+        //We will set the convention that Alice (us) puts our input on i_0 and Bob
+        //on i_1.
+        this.i_0 = new SecretRepresentation();
+        this.i_1 = new SecretRepresentation();
+        this.o_0 = new SecretRepresentation();
+        this.gen_truth_table = function () {
+            this.outputarray = [
+                xor3(this.i_0[0], this.i_1[0], this.o_0[0]),
+                xor3(this.i_0[0], this.i_1[1], this.o_0[0]),           
+                xor3(this.i_0[1], this.i_1[0], this.o_0[0]),          
+                xor3(this.i_0[1], this.i_1[1], this.o_0[1]),
+            ];
+            this.outputarray = shuffle(this.outputarray)
+            return this.outputarray
+        };
+    }
+
+    function oblivious_transfer() {
+        //Bob gets to pick a representation of 0 or 1, depending on whether or not he's DTF.
+        //TODO: Implement this function
+        return 0;
+    }
+
+    function get_user_input() {
+        //User is always DTF, for now.
+       //TODO: Implement this function
+        return 1;
+    }
+
+    //https://stackoverflow.com/questions/6274339/how-can-i-shuffle-an-array-in-javascript
+    //TODO: Make this cryptographically secure
+    function shuffle(o){
+        for(var j, x, i = o.length; i; j = Math.floor(Math.random() * i), x = o[--i], o[i] = o[j], o[j] = x);
+        return o;
+    }
+
+    x = new And();
+    console.log(x.gen_truth_table())
+
+</script>
