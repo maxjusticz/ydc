@@ -1,5 +1,6 @@
+<html>
+<head>
 <script src="js-nacl/lib/nacl_factory.js"></script>
-
 <script>
     SECURITY_PARAMETER = 256;
 
@@ -8,19 +9,9 @@
     function SecretRepresentation() {
         this["0"] = nacl.random_bytes(SECURITY_PARAMETER/8);
         this["1"] = nacl.random_bytes(SECURITY_PARAMETER/8);
+        this["h0"] = nacl.to_hex(nacl.crypto_hash_sha256(nacl.to_hex(this["0"])));
+        this["h1"] = nacl.to_hex(nacl.crypto_hash_sha256(nacl.to_hex(this["1"])));
     }
-
-    function Input() {   
-    }
-    Input.prototype = new SecretRepresentation();
-
-    function Output() {
-    }
-    Output.prototype = new SecretRepresentation();
-    Output.prototype["h0"] = nacl.to_hex(nacl.crypto_hash_sha256(Output.prototype[0]));
-    Output.prototype["h1"] = nacl.to_hex(nacl.crypto_hash_sha256(Output.prototype[1]));
-    //For output gates, we need to save the hashed representation of 0 and 1 in order
-    //to compare with Bob's result.
 
     function xor3(a, b, c) {
         output = []
@@ -30,38 +21,42 @@
         return output
     }
 
-    var and_gate = new function And() {
+    function And() {
         //Represents a single And gate, returning the truth table in a random order.
         //We hold onto the representations of 0 and 1 for each wire, so it's ok to
         //always return the truth table shuffled.
         //
         //We will set the convention that Alice (us) puts our input on i_0 and Bob
         //on i_1.
-        this.i = { "i0": new Input(), 
-                   "i1": new Input() }
-        this.o = { "o0": new Output() }
+        this.i = { "i0": new SecretRepresentation(), 
+                   "i1": new SecretRepresentation() }
+        this.o = { "o0": new SecretRepresentation() }
         this.gen_truth_table = function () {
-            this.outputarray = [
+            var outputarray = [
                 xor3(this.i["i0"][0], this.i["i1"][0], this.o["o0"][0]),
                 xor3(this.i["i0"][0], this.i["i1"][1], this.o["o0"][0]),           
                 xor3(this.i["i0"][1], this.i["i1"][0], this.o["o0"][0]),          
                 xor3(this.i["i0"][1], this.i["i1"][1], this.o["o0"][1]),
             ];
-            this.outputarray = shuffle(this.outputarray)
-            return this.outputarray
+            outputarray = shuffle(outputarray)
+            return outputarray
         };
+        this.gen_hex_truth_table = function() {
+            var tt = this.gen_truth_table();
+            var tth = []
+            for (var i = 0; i < tt.length; i++) {
+                tth.push(nacl.to_hex(tt[i]));
+            }
+            return tth;
+        };
+        this.truth_table = this.gen_truth_table();
+        this.hex_truth_table = this.gen_hex_truth_table();
     }
 
-    function oblivious_transfer() {
+    function oblivious_transfer_to_bob() {
         //Bob gets to pick a representation of 0 or 1, depending on whether or not he's DTF.
         //TODO: Implement this function
         return 0;
-    }
-
-    function get_user_input() {
-        //User is always DTF, for now.
-        //TODO: Implement this function
-        return 1;
     }
 
     //https://stackoverflow.com/questions/6274339/how-can-i-shuffle-an-array-in-javascript
@@ -71,7 +66,7 @@
         return o;
     }
 
-    function evaluate_reply(reply_hashes) {
+    function evaluate_reply(reply_hashes, and_gate) {
         //We get a reply from Bob in the form of a sha256 hash for each row
         //in the truth table. Only one of these will correspond to a valid
         //one or zero, and we need to figure out which one.
@@ -90,6 +85,45 @@
         console.log("Bob didn't send back a valid output value!"); 
     }
 
-    console.log(and_gate.gen_truth_table())
+    function receive_alice_data(data) {
+        //Here Bob receives a data structure from Alice containing
+        //the masked truth table and Alice's bit selection representation
+        truth_table = data["truth_table"];
+        alice_selection = data["alice_selection"]
+    }
 
+    function get_choice_from_user() {
+        return document.getElementById("dtf").checked ? 1 : 0;
+    }
+
+    function send_to_bob(data) {
+        console.log(data);
+    }
+
+    ///////////
+    // ALICE //
+    ///////////
+
+    function alice() {
+        var and_gate = new And();
+        var encoded_choice = nacl.to_hex(and_gate.i["i0"][get_choice_from_user()]);
+        var encoded_truth_table = and_gate.hex_truth_table;
+        send_to_bob(JSON.stringify({
+            "encoded_choice": encoded_choice,
+            "encoded_truth_table": encoded_truth_table
+        }));
+    }
+
+    ///////////
+    //  BOB  //
+    ///////////
+
+    function bob() {
+    }
 </script>
+</head>
+<body>
+<input type="checkbox" id="dtf" name="dtf">Check if you want to sleep with Bob<br><br>
+<button onclick="alice()">Done</button>
+</body>
+</html>
