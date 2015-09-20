@@ -10,6 +10,18 @@
         this["1"] = nacl.random_bytes(SECURITY_PARAMETER/8);
     }
 
+    function Input() {   
+    }
+    Input.prototype = new SecretRepresentation();
+
+    function Output() {
+    }
+    Output.prototype = new SecretRepresentation();
+    Output.prototype["h0"] = nacl.to_hex(nacl.crypto_hash_sha256(Output.prototype[0]));
+    Output.prototype["h1"] = nacl.to_hex(nacl.crypto_hash_sha256(Output.prototype[1]));
+    //For output gates, we need to save the hashed representation of 0 and 1 in order
+    //to compare with Bob's result.
+
     function xor3(a, b, c) {
         output = []
         for (var i = 0; i < a.length; i++) {
@@ -18,22 +30,22 @@
         return output
     }
 
-    function And() {
+    var and_gate = new function And() {
         //Represents a single And gate, returning the truth table in a random order.
         //We hold onto the representations of 0 and 1 for each wire, so it's ok to
         //always return the truth table shuffled.
         //
         //We will set the convention that Alice (us) puts our input on i_0 and Bob
         //on i_1.
-        this.i_0 = new SecretRepresentation();
-        this.i_1 = new SecretRepresentation();
-        this.o_0 = new SecretRepresentation();
+        this.i = { "i0": new Input(), 
+                   "i1": new Input() }
+        this.o = { "o0": new Output() }
         this.gen_truth_table = function () {
             this.outputarray = [
-                xor3(this.i_0[0], this.i_1[0], this.o_0[0]),
-                xor3(this.i_0[0], this.i_1[1], this.o_0[0]),           
-                xor3(this.i_0[1], this.i_1[0], this.o_0[0]),          
-                xor3(this.i_0[1], this.i_1[1], this.o_0[1]),
+                xor3(this.i["i0"][0], this.i["i1"][0], this.o["o0"][0]),
+                xor3(this.i["i0"][0], this.i["i1"][1], this.o["o0"][0]),           
+                xor3(this.i["i0"][1], this.i["i1"][0], this.o["o0"][0]),          
+                xor3(this.i["i0"][1], this.i["i1"][1], this.o["o0"][1]),
             ];
             this.outputarray = shuffle(this.outputarray)
             return this.outputarray
@@ -48,7 +60,7 @@
 
     function get_user_input() {
         //User is always DTF, for now.
-       //TODO: Implement this function
+        //TODO: Implement this function
         return 1;
     }
 
@@ -59,7 +71,25 @@
         return o;
     }
 
-    x = new And();
-    console.log(x.gen_truth_table())
+    function evaluate_reply(reply_hashes) {
+        //We get a reply from Bob in the form of a sha256 hash for each row
+        //in the truth table. Only one of these will correspond to a valid
+        //one or zero, and we need to figure out which one.
+
+        //Right now this comparison is hardcoded for gates with only one output
+        var h0 = and_gate.o["o0"]["h0"]
+        var h1 = and_gate.o["o0"]["h1"]
+        console.log(h1);
+        for (var i = 0; i < reply_hashes.length; i++) {
+            if (reply_hashes[i] == h0) {
+                return 0;            
+            } else if (reply_hashes[i] == h1) {
+                return 1;            
+            }
+        }
+        console.log("Bob didn't send back a valid output value!"); 
+    }
+
+    console.log(and_gate.gen_truth_table())
 
 </script>
